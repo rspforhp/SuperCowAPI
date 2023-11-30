@@ -7,6 +7,8 @@ public static unsafe class Game
 {
     public static bool bootMenuActive = false;
     public static unsafe HWND* window = null;
+    public static bool currentTickIsInner;
+    public static bool booted;
     public static unsafe HWND Window =>*window;
     public static void Init() {
         Memory.Pattern<Ptr<HWND>> movWindow=new Memory.Pattern<Ptr<HWND>>("A3 ? ? ? ? 83 3D ? ? ? ? ? 74 ? 68 ? ? ? ? E8 ? ? ? ?").Search(out var res);

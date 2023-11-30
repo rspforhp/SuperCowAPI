@@ -33,6 +33,17 @@ public unsafe struct Pattern<T> where T : unmanaged
         result= Found;
         return this;
     }
+    public Ptr<T> Search()
+    {
+        if (Found.Pointer == null)
+        {
+            var r = Scanner.FindPattern_Simple(Sig);
+            Found.Pointer=(T*)(r.Offset+ 0x400000);
+            FailedToFind = !r.Found;
+            return Found;
+        }
+        return Found;
+    }
     public unsafe IntPtr SearchPtr()
     {
         Search(out var test);

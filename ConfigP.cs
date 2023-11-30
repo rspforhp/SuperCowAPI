@@ -1,5 +1,4 @@
-﻿using Neo.IronLua;
-using YamlDotNet.RepresentationModel;
+﻿using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
 namespace SuperCowAPI;
@@ -64,35 +63,5 @@ public class Config : IDisposable
             s);
     }
 
-    public static void AddToLua(LuaGlobal context, string modId)
-    {
-        context.DefineFunction("__getModConfig", delegate() { return _cfg["modConfigs"][modId]; });
-        context.DefineFunction("__configKeyExists", delegate(YamlMappingNode node,string key) {
-            if (node is YamlMappingNode mapnode&& mapnode.Children.ContainsKey(key)) return true;
-            return false;
-        });
-        context.DefineFunction("__configGetString", delegate(YamlMappingNode node,string key)
-        {
-            return node[key].ToString();
-        });
-        context.DefineFunction("__configGetDouble", delegate(YamlMappingNode node, string key)
-        {
-            return double.Parse(node[key].ToString());
-        });
-        context.DefineFunction("__configGetBool",delegate(YamlMappingNode node, string key) {
-            return bool.Parse(node[key].ToString());
-        });
-        context.DefineFunction("__configGetNested", delegate(YamlMappingNode node, string key) {
-            return node[key];
-        });
-        context.DefineFunction("__configSet",
-            delegate(YamlMappingNode  node,string val, string  key)
-            {
-                var a = node as YamlMappingNode;
-                a.Children[key]= val;
-            });
-        context.DefineFunction("__configSave", delegate() {
-            Save();
-        });
-    }
+
 }

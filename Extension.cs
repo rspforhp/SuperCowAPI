@@ -9,6 +9,11 @@ public static unsafe class Extension
     {
         return new Ptr<T>((T*)(((int)t.Pointer) + offset));
     }
+    public static Ptr<T> GoToNearCall<T>(this Ptr<T> t) where T : unmanaged
+    {
+        return new Ptr<T>(*(T**)t.AddByteOffset(1).Pointer).AddByteOffset(5).AddByteOffset((int)t.Pointer) ;
+    }
+  
     public static string? GetString(this YamlNode a)
     {
         if (a == null|| a.ToString()=="") return null;
