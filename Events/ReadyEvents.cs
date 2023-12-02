@@ -2,7 +2,7 @@
 
 namespace SuperCowAPI;
 
-public class ReadyEvents
+public static unsafe class ReadyEvents
 {
     [Function(CallingConventions.Stdcall)]
     public delegate void ReadyEvent();

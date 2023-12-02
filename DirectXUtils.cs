@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using PInvoke;
-using Silk.NET.Maths;
 using SuperCowAPI.SDK;
+using TerraFX.Interop.Windows;
 
 namespace SuperCowAPI;
 
@@ -11,11 +11,11 @@ public static unsafe class dx_utils
     public static void force_render_tick() {
         
         SDK.Game.currentTickIsInner = true;
-        var p = DirectX.d3dDevice;
         var pd = DirectX.D3dDevice;
-        (pd)->Clear(0, null, 0x1, 0xFF121212, 0, 0);
+        uint D3DCLEAR_TARGET = 0x00000001;//прост понятнее
+            (pd)->Clear(0, null,D3DCLEAR_TARGET , 0xFF121212, 0, 0);
         EventManager.Emit<TickEvents.BeforeTickEvent>();
-        (pd)->Present((Box2D<int>*)0,(Box2D<int>*)0, IntPtr.Zero,null );
+        (pd)->Present(null,null,HWND.NULL, null );
         EventManager.Emit<TickEvents.AfterTickEvent>();
         SDK.Game.currentTickIsInner = false;
         if ( User32.PeekMessage(msg, IntPtr.Zero, 0, 0, (User32.PeekMessageRemoveFlags)1u) ) {

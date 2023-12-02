@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0-windows</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <LangVersion>10.0</LangVersion>
@@ -47,7 +47,9 @@
         <PackageReference Include="PInvoke.AdvApi32" Version="0.7.124" />
         <PackageReference Include="PInvoke.Gdi32" Version="0.7.124" />
         <PackageReference Include="PInvoke.Kernel32" Version="0.7.124" />
+        <PackageReference Include="PInvoke.Shell32" Version="0.7.124" />
         <PackageReference Include="PInvoke.User32" Version="0.7.124" />
+        <PackageReference Include="PInvoke.Win32" Version="0.7.124" />
         <PackageReference Include="PInvoke.Windows.Core" Version="0.7.124" />
         <PackageReference Include="Reloaded.Hooks" Version="4.3.0" />
         <PackageReference Include="Reloaded.Memory.Sigscan" Version="3.1.8" />
@@ -58,6 +60,10 @@
         <PackageReference Include="Vanara.PInvoke.Kernel32" Version="4.0.0-beta" />
         <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.0-beta" />
         <PackageReference Include="YamlDotNet" Version="13.7.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+
     </ItemGroup>
 
 </Project>

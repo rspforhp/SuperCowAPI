@@ -25,5 +25,4 @@ public static unsafe class TickEvents
     public static AutoHookFunction<Render> RenderHook = new(new Pattern<int>("55 8B EC 51 E8 ? ? ? ? 6A ?").Search().Pointer, _RenderHook);
 
 
-
 }

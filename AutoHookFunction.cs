@@ -51,16 +51,16 @@ public class AutoHookFunction<T> : Function<T> where T : Delegate
 
     public AutoHookFunction(int address,  T hook) : base((UIntPtr)address, StaticMod._hooks)
     {
-        this.CreateHook(hook);
+            this.CreateHook(hook);
     }
 
     public AutoHookFunction(UIntPtr address,  T hook) : base(address, StaticMod._hooks)
     {
-        this.CreateHook(hook);
+            this.CreateHook(hook);
     }
     public unsafe AutoHookFunction(int* address,  T hook) : base((UIntPtr)address, StaticMod._hooks)
     {
-        this.CreateHook(hook);
+            this.CreateHook(hook);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]

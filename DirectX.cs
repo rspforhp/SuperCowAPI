@@ -8,9 +8,9 @@ namespace SuperCowAPI.SDK;
 
 public static unsafe class DirectX
 {
-    private static  IntPtr** d3dDevice_ = null;
+    private static  IDirect3DDevice8** d3dDevice_ = null;
 
-    public static IntPtr** d3dDevice
+    public static IDirect3DDevice8** d3dDevice
     {
         get
         {
@@ -22,13 +22,13 @@ public static unsafe class DirectX
             d3dDevice_ = value;
         }
     }
-    public static Silk.NET.Direct3D9.IDirect3DDevice9* D3dDevice => (IDirect3DDevice9*)(*d3dDevice);
+    public static IDirect3DDevice9* D3dDevice =>(*d3dDevice)->ProxyInterface;
     static  List<Ptr<AssetPool.Asset.IDirect3DTexture8>> removedTextures=new();
 
     public static void GetDirectDevice()
     {
         Pattern<Ptr<Ptr<IntPtr>>> pushD3dDevicePointer=new Pattern<Ptr<Ptr<IntPtr>>>("68 ? ? ? ? 68 ? ? ? ? 6A ? 8B 4D 08").Search(out var result);
-        d3dDevice = (IntPtr**)(*result.AddByteOffset(1).Pointer).Pointer;
+        d3dDevice = (IDirect3DDevice8**)(*result.AddByteOffset(1).Pointer).Pointer;
     }
     public static void Init()
     {
@@ -45,4 +45,14 @@ public static unsafe class DirectX
         if (removedTextures.Contains(texture)) return;
         removedTextures.Add(texture);
     }
+}
+
+public unsafe struct IDirect3DDevice8
+{
+    public void* vtable;
+    public void *ProxyAddressLookupTable;
+
+
+    public void * D3D;
+    public IDirect3DDevice9 * ProxyInterface;
 }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Iced.Intel;
 using PInvoke;
 using Reloaded.Hooks;
@@ -6,6 +7,7 @@ using Reloaded.Hooks.Definitions.X86;
 using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Memory.Pointers;
 using Reloaded.Mod.Interfaces;
+using Silk.NET.Direct3D9;
 using SuperCowAPI.Template;
 using SuperCowAPI.Configuration;
 using SuperCowAPI.Memory;
@@ -13,6 +15,7 @@ using SuperCowAPI.SDK;
 using TerraFX.Interop.Gdiplus;
 using TerraFX.Interop.Windows;
 using static PInvoke.User32;
+
 namespace SuperCowAPI;
 
 /// <summary>
@@ -64,54 +67,45 @@ public class Mod : ModBase // <= Do not Remove.
         StaticMod._logger = context.Logger;
         StaticMod._owner = context.Owner;
         StaticMod._modConfig = context.ModConfig;
+
         Debugger.Launch();
+
 
         InitStaticPatches();
 
-        // For more information about this template, please see
-        // https://reloaded-project.github.io/Reloaded-II/ModTemplate/
-
-        // If you want to implement e.g. unload support in your mod,
-        // and some other neat features, override the methods in ModBase.
-
-        // TODO: Implement some mod logic
         Main();
     }
+
 
     public unsafe bool Main()
     {
         if (Directory.GetCurrentDirectory().Any(a => !char.IsAscii(a)))
         {
-            User32.MessageBox(IntPtr.Zero, "Путь к игре не может содержать буквы русского алфавита", "SuperMod", User32.MessageBoxOptions.MB_OK);
+            User32.MessageBox(IntPtr.Zero, "Путь к игре не может содержать буквы русского алфавита", "SuperMod",
+                User32.MessageBoxOptions.MB_OK);
             Environment.Exit(0);
-        } 
-        
+        }
+
 
         bool shiftPressed = (User32.GetAsyncKeyState((int)User32.VirtualKey.VK_SHIFT) & 0x01) > 0;
+
+
+        bool isDebug = false;
 
 
         Config.Init();
         if (Config.GetAndEnsureKey("disabled").GetBool() is true)
         {
             if (!shiftPressed) return true;
-            Config.Set("disabled",false);
+            Config.Set("disabled", false);
             Config.Save();
         }
 
-        if (shiftPressed) SDK.Game.bootMenuActive = true;
+        if (shiftPressed || isDebug) SDK.Game.bootMenuActive = true;
 
         init();
         Console.WriteLine("Мод загружен!");
-        postInit();
 
-        EventManager.On<TickEvents.BeforeTickEvent>(delegate()
-        {
-            Console.WriteLine("Before tick event");
-        });
-        EventManager.On<TickEvents.AfterTickEvent>(delegate()
-        {
-            Console.WriteLine("After tick event");
-        });
         EventManager.On<StartExecutionEvents.StartExecutionEvent>(delegate()
         {
             Console.WriteLine("StartExecutionEvent!");
@@ -119,14 +113,12 @@ public class Mod : ModBase // <= Do not Remove.
         return true;
     }
 
- 
-
 
     void postInit()
     {
         // ModManager.InitMods();
         // ModFileResolver.Init();
-          EventManager.Emit<ReadyEvents.ReadyEvent>();
+        EventManager.Emit<ReadyEvents.ReadyEvent>();
     }
 
     [Function(CallingConventions.Stdcall)]
@@ -136,35 +128,42 @@ public class Mod : ModBase // <= Do not Remove.
     {
         Console.WriteLine("Инициализация загрузки игры");
 
-        if ((User32.GetAsyncKeyState((int)User32.VirtualKey.VK_SHIFT) & 0x01) > 0) {
+        if ((User32.GetAsyncKeyState((int)User32.VirtualKey.VK_SHIFT) & 0x01) > 0)
+        {
             SDK.Game.bootMenuActive = true;
         }
 
-        if (SDK.Game.bootMenuActive) {
+        if (SDK.Game.bootMenuActive)
+        {
             Console.WriteLine("Boot меню активно");
-            Vanara.PInvoke.User32.EnableMenuItem(GetSystemMenu(SDK.Game.Window, false), (uint)SysCommands.SC_CLOSE, Vanara.PInvoke.User32.MenuFlags.MF_BYCOMMAND | Vanara.PInvoke.User32.MenuFlags.MF_DISABLED | Vanara.PInvoke.User32.MenuFlags.MF_GRAYED);
+            Vanara.PInvoke.User32.EnableMenuItem(GetSystemMenu(SDK.Game.Window, false), (uint)SysCommands.SC_CLOSE,
+                Vanara.PInvoke.User32.MenuFlags.MF_BYCOMMAND | Vanara.PInvoke.User32.MenuFlags.MF_DISABLED |
+                Vanara.PInvoke.User32.MenuFlags.MF_GRAYED);
         }
-    
-        while (SDK.Game.bootMenuActive) {
-            var start =  Kernel32.GetTickCount64();
+
+        while (SDK.Game.bootMenuActive)
+        {
+            var start = Kernel32.GetTickCount64();
             dx_utils.force_render_tick();
-            var delta = Kernel32. GetTickCount64() - start;
-             int needed = 10; 
-        
-             
+            var delta = Kernel32.GetTickCount64() - start;
+            int needed = 10;
+
+
             if (delta < (ulong)needed) Thread.Sleep(needed - (int)delta);
         }
-    
-        Vanara.PInvoke.User32.EnableMenuItem(GetSystemMenu(SDK.Game.Window, false), (uint)SysCommands.SC_CLOSE, Vanara.PInvoke.User32.MenuFlags.MF_BYCOMMAND | Vanara.PInvoke.User32.MenuFlags.MF_ENABLED);
+
+        Vanara.PInvoke.User32.EnableMenuItem(GetSystemMenu(SDK.Game.Window, false), (uint)SysCommands.SC_CLOSE,
+            Vanara.PInvoke.User32.MenuFlags.MF_BYCOMMAND | Vanara.PInvoke.User32.MenuFlags.MF_ENABLED);
         SDK.Game.booted = true;
         EventManager.Emit<WindowReadyEvents.WindowReadyEvent>();
         return LoadGameHook.GetTrampoline()();
     }
 
-    public static unsafe AutoHookFunction<load_game_>  LoadGameHook = new AutoHookFunction<load_game_>(
+    public static unsafe AutoHookFunction<load_game_> LoadGameHook = new AutoHookFunction<load_game_>(
         new Pattern<int>("E8 ? ? ? ? C6 05 ? ? ? ? ? 0F B6 05 ? ? ? ? 85 C0 74 ? 6A").Search().GoToNearCall()
             .Pointer, load_game);
-    unsafe void  init()
+
+    unsafe void init()
     {
         var cwd = Directory.GetCurrentDirectory();
         Console.WriteLine("Загрузка SuperMod " + "1.0.0" + " by zziger...");
@@ -175,86 +174,25 @@ public class Mod : ModBase // <= Do not Remove.
         Gdiplus.GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, null);
 
         //MH_Initialize();
-        
+
         SDK.Game.Init();
-      
+
         Game.AssetPool.Init();
-       
-
-        /*
-
-  EventManager.On<StartExecutionEvent>([] {
-      Log.Info << "Пост-инициализация" << Log.Endl;
-      utils.handle_error(postInit, "пост-инициализации");
-  });
-
-  EventManager.On<GameLoadedEvent>([] {
-      Log.Info << "Игра загружена!" << Log.Endl;
-
-      DragAcceptFiles(*SDK.Game.window, true);
-  });
 
 
-  EventManager.On<WindowEvent>([](auto ev) {
-      if (ev.msg == WM_DROPFILES)
-      {
-          auto drop = (HDROP)(ev.wParam);
+        EventManager.On<StartExecutionEvents.StartExecutionEvent>(delegate
+        {
+            Console.WriteLine("Пост-инициализация");
+            postInit();
+        });
 
-          uint32_t nCntFiles = DragQueryFileW(drop, -1, 0, 0);
 
-          for (int j = 0; j < nCntFiles; j++)
-          {
-              wchar_t szBuf[MAX_PATH];
-              DragQueryFileW(drop, j, szBuf, sizeof(szBuf));
-              std.optional<std.filesystem.path> temp;
-              try
-              {
-                  auto path = std.filesystem.path(szBuf);
-                  if (path.extension() == ".zip")
-                  {
-                      miniz_cpp.zip_file zip {
-                          path.string()
-                      }
-                      ;
-                      auto list = zip.namelist();
-                      auto manifestRes = std.ranges.find_if(list, [](std.string str){
-                          return str.ends_with("manifest.yml");
-                      });
-                      if (manifestRes == list.end())
-                      {
-                          MessageBoxA(nullptr, "Неверный архив модв!", nullptr, MB_OK | MB_ICONERROR);
-                          continue;
-                      }
-
-                      auto root = (*manifestRes).substr(0, (*manifestRes).size() - 12); // manifest.yml = 12 chars
-                      Log.Debug << "Found mod in " << path << " at \"" << root << "\"" << Log.Endl;
-                      auto info = ModInfo(zip.read(root + "manifest.yml"));
-                      info.zipFile = path;
-                      info.zipRoot = root;
-                      ModManager.RequestModInstall(info);
-                  }
-                  else
-                  {
-                      ModManager.RequestModInstall(ModInfo(path));
-                  }
-              }
-              catch (std.exception
-
-              &e) {
-                  Log.Error << "Ошибка установки мода: " << e.what() << Log.Endl;
-              } catch(...) {
-                  Log.Error << "Неизвестная ошибка установки мода" << Log.Endl;
-              }
-          }
-
-          if (nCntFiles > 0) SetForegroundWindow(*SDK.Game.window);
-
-          DragFinish(drop);
-      }
-  });
-  */
+        EventManager.On<GameLoadedEvents.GameLoadedEvent>(delegate() { Console.WriteLine("Игра загружена!"); });
     }
-    //This is needed to make sure all autohookfunction's constructors run 
+/*
+      */
+
+//This is needed to make sure all autohookfunction's constructors run 
     private static void InitStaticPatches()
     {
         foreach (var type in typeof(Mod).Assembly.GetTypes())
@@ -273,8 +211,8 @@ public class Mod : ModBase // <= Do not Remove.
 
     public override void ConfigurationUpdated(SuperCowAPI.Configuration.Config configuration)
     {
-        // Apply settings from configuration.
-        // ... your code here.
+// Apply settings from configuration.
+// ... your code here.
         _configuration = configuration;
         _logger.WriteLine($"[{_modConfig.ModId}] Config Updated: Applying");
     }
@@ -293,14 +231,20 @@ public class Mod : ModBase // <= Do not Remove.
 
     public class Exports : IExports
     {
-        // Sharing a type actually exports the whole library.  
-        // So you only really need to share 1 type to export your whole interfaces library.  
+// Sharing a type actually exports the whole library.  
+// So you only really need to share 1 type to export your whole interfaces library.  
 
         public Type[] GetTypes()
         {
             var ar = new System.Collections.Generic.List<Type>
             {
-                typeof(ModBase), typeof(Ptr<>), typeof(Assembler), typeof(Function<>),typeof(AutoHookFunction<>),typeof(StaticMod)
+                typeof(ModBase), typeof(Ptr<>), typeof(Assembler), typeof(Function<>), typeof(AutoHookFunction<>),
+                typeof(StaticMod), typeof(IDirect3DDevice9), typeof(Silk.NET.Core.Bool8), typeof(Silk.NET.DXGI.DXGI),
+                typeof(Silk.NET.Maths.Rectangle),  typeof(PInvoke.Shell32),
+                typeof(PInvoke.Kernel32), typeof(PInvoke.Ole32), typeof(Vanara.PInvoke.Kernel32),
+             typeof(Vanara.PInvoke.ObjectTypeListLevel), typeof(Vanara.PInvoke.User32), typeof(PInvoke.User32),
+                typeof(Vanara.PInvoke.SECURITY_INFORMATION), typeof(Vanara.Formatter),
+                typeof(TerraFX.Interop.Windows.Windows),typeof(PInvoke.Win32ErrorCode),typeof(Vanara.PInvoke.Gdi32)
             };
             return ar.ToArray();
         }
